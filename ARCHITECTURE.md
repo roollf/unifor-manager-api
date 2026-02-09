@@ -233,13 +233,9 @@ When a student enrolls:
 
 This ensures only one enrollment transaction can hold the lock on a given class at a time, preventing overbooking.
 
-**Implementation:** Use `EntityManager` or Panache's locking API, e.g.:
+**Isolation level:** PostgreSQL default READ COMMITTED. `SELECT ... FOR UPDATE` provides row-level locking; no need for SERIALIZABLE. Lock is held until transaction commit.
 
-```java
-MatrixClass matrixClass = MatrixClass.findById(matrixClassId, LockMode.PESSIMISTIC_WRITE);
-```
-
-Ensure the lock is acquired before any validation that depends on current enrollment count.
+**Implementation:** Use `MatrixClassRepository.findByIdForUpdate(matrixClassId)` which issues `SELECT ... FOR UPDATE` (PESSIMISTIC_WRITE) on the matrix_class row. Ensure the lock is acquired before any validation that depends on current enrollment count.
 
 ### 5.2 Transaction Boundaries
 
