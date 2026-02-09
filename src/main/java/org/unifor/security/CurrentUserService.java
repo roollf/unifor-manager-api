@@ -24,13 +24,16 @@ public class CurrentUserService {
 
     private final Instance<JsonWebToken> jwtInstance;
     private final UserRepository userRepository;
+    private final Instance<TestUserEmailContext> testUserEmailContext;
 
     @Inject
     SecurityIdentity securityIdentity;
 
-    public CurrentUserService(Instance<JsonWebToken> jwtInstance, UserRepository userRepository) {
+    public CurrentUserService(Instance<JsonWebToken> jwtInstance, UserRepository userRepository,
+                              Instance<TestUserEmailContext> testUserEmailContext) {
         this.jwtInstance = jwtInstance;
         this.userRepository = userRepository;
+        this.testUserEmailContext = testUserEmailContext;
     }
 
     /**
@@ -79,6 +82,13 @@ public class CurrentUserService {
         email = getClaim(CLAIM_PREFERRED_USERNAME);
         if (email != null && !email.isBlank()) {
             return email;
+        }
+        // Test-only: X-Test-User-Email header for concurrent enrollment tests (different users per request)
+        if (testUserEmailContext.isResolvable()) {
+            var ctx = testUserEmailContext.get();
+            if (ctx.getEmail() != null && !ctx.getEmail().isBlank()) {
+                return ctx.getEmail();
+            }
         }
         // Test / mock auth: use principal name as email (e.g. @TestSecurity(user = "email@..."))
         if (securityIdentity != null && securityIdentity.getPrincipal() != null) {
