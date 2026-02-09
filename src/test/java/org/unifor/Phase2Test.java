@@ -1,5 +1,6 @@
 package org.unifor;
 
+import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
 import io.restassured.http.ContentType;
@@ -13,6 +14,7 @@ import static org.hamcrest.Matchers.*;
  * Uses @TestSecurity with OIDC disabled; CurrentUserService resolves user by principal name (email).
  */
 @QuarkusTest
+@QuarkusTestResource(PostgresTestResource.class)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class Phase2Test {
 
