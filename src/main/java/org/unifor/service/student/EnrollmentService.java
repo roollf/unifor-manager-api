@@ -1,7 +1,6 @@
 package org.unifor.service.student;
 
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.persistence.LockModeType;
 import jakarta.transaction.Transactional;
 import org.unifor.entity.*;
 import org.unifor.exception.ConflictException;
@@ -9,6 +8,7 @@ import org.unifor.exception.NotFoundException;
 import org.unifor.repository.CurriculumMatrixRepository;
 import org.unifor.repository.EnrollmentRepository;
 import org.unifor.repository.MatrixClassRepository;
+import org.unifor.service.ScheduleConflictUtil;
 
 import java.util.List;
 import java.util.Optional;
@@ -94,21 +94,20 @@ public class EnrollmentService {
         TimeSlot candidateSlot = mc.timeSlot;
         return studentEnrollments.stream()
                 .filter(e -> e.matrixClass != null)
-                .anyMatch(e -> timeSlotsOverlap(candidateSlot, e.matrixClass.timeSlot));
-    }
-
-    private boolean timeSlotsOverlap(TimeSlot a, TimeSlot b) {
-        if (!a.dayOfWeek.equals(b.dayOfWeek)) return false;
-        return a.startTime.isBefore(b.endTime) && b.startTime.isBefore(a.endTime);
+                .anyMatch(e -> ScheduleConflictUtil.overlaps(candidateSlot, e.matrixClass.timeSlot));
     }
 
     /**
-     * Enrolls student in a class. Uses pessimistic lock for concurrency (EN-04).
-     * Validates EN-01 to EN-08.
+     * Enrolls student in a class. Validates EN-01 to EN-08.
+     * <p>
+     * Concurrency (Phase 5, CC-01, CC-02, CC-03): Uses SELECT FOR UPDATE (PESSIMISTIC_WRITE)
+     * on the MatrixClass row. Lock is acquired first, then seat check, conflict check,
+     * and duplicate-subject check run in the same transaction. Isolation level:
+     * PostgreSQL default READ COMMITTED. Lock is held until commit, preventing overbooking.
      */
     @Transactional
     public Enrollment enroll(Long matrixClassId, User student) {
-        MatrixClass matrixClass = MatrixClass.findById(matrixClassId, LockModeType.PESSIMISTIC_WRITE);
+        MatrixClass matrixClass = matrixClassRepository.findByIdForUpdate(matrixClassId);
         if (matrixClass == null) {
             throw new NotFoundException("Turma não encontrada");
         }

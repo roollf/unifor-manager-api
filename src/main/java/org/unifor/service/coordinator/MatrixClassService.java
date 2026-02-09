@@ -10,8 +10,8 @@ import org.unifor.exception.ForbiddenException;
 import org.unifor.exception.NotFoundException;
 import org.unifor.exception.ValidationException;
 import org.unifor.repository.*;
+import org.unifor.service.ScheduleConflictUtil;
 
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -185,17 +185,12 @@ public class MatrixClassService {
                     enr.student, matrixClass
             ).list();
             for (Enrollment other : otherEnrollments) {
-                if (timeSlotsOverlap(newTimeSlot, other.matrixClass.timeSlot)) {
+                if (ScheduleConflictUtil.overlaps(newTimeSlot, other.matrixClass.timeSlot)) {
                     return true;
                 }
             }
         }
         return false;
-    }
-
-    private boolean timeSlotsOverlap(TimeSlot a, TimeSlot b) {
-        if (!a.dayOfWeek.equals(b.dayOfWeek)) return false;
-        return a.startTime.isBefore(b.endTime) && b.startTime.isBefore(a.endTime);
     }
 
     @Transactional
