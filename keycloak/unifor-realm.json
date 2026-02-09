@@ -1,0 +1,105 @@
+{
+  "realm": "unifor",
+  "enabled": true,
+  "loginWithEmailAllowed": true,
+  "roles": {
+    "realm": [
+      { "name": "coordinator" },
+      { "name": "student" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "unifor-manager",
+      "enabled": true,
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "91wTqowfgcNWQp3xEqXfF1YBZhDzbrqk",
+      "directAccessGrantsEnabled": true,
+      "redirectUris": ["*"],
+      "webOrigins": ["*"]
+    }
+  ],
+  "users": [
+    {
+      "username": "carmen.lima@unifor.br",
+      "email": "carmen.lima@unifor.br",
+      "enabled": true,
+      "firstName": "Carmen",
+      "lastName": "Lima",
+      "credentials": [{ "type": "password", "value": "secret", "temporary": false }],
+      "realmRoles": ["coordinator"],
+      "clientRoles": { "unifor-manager": ["coordinator"] }
+    },
+    {
+      "username": "roberto.alves@unifor.br",
+      "email": "roberto.alves@unifor.br",
+      "enabled": true,
+      "firstName": "Roberto",
+      "lastName": "Alves",
+      "credentials": [{ "type": "password", "value": "secret", "temporary": false }],
+      "realmRoles": ["coordinator"],
+      "clientRoles": { "unifor-manager": ["coordinator"] }
+    },
+    {
+      "username": "fernanda.souza@unifor.br",
+      "email": "fernanda.souza@unifor.br",
+      "enabled": true,
+      "firstName": "Fernanda",
+      "lastName": "Souza",
+      "credentials": [{ "type": "password", "value": "secret", "temporary": false }],
+      "realmRoles": ["coordinator"],
+      "clientRoles": { "unifor-manager": ["coordinator"] }
+    },
+    {
+      "username": "lucas.ferreira@unifor.br",
+      "email": "lucas.ferreira@unifor.br",
+      "enabled": true,
+      "firstName": "Lucas",
+      "lastName": "Ferreira",
+      "credentials": [{ "type": "password", "value": "secret", "temporary": false }],
+      "realmRoles": ["student"],
+      "clientRoles": { "unifor-manager": ["student"] }
+    },
+    {
+      "username": "beatriz.rodrigues@unifor.br",
+      "email": "beatriz.rodrigues@unifor.br",
+      "enabled": true,
+      "firstName": "Beatriz",
+      "lastName": "Rodrigues",
+      "credentials": [{ "type": "password", "value": "secret", "temporary": false }],
+      "realmRoles": ["student"],
+      "clientRoles": { "unifor-manager": ["student"] }
+    },
+    {
+      "username": "rafael.pereira@unifor.br",
+      "email": "rafael.pereira@unifor.br",
+      "enabled": true,
+      "firstName": "Rafael",
+      "lastName": "Pereira",
+      "credentials": [{ "type": "password", "value": "secret", "temporary": false }],
+      "realmRoles": ["student"],
+      "clientRoles": { "unifor-manager": ["student"] }
+    },
+    {
+      "username": "juliana.martins@unifor.br",
+      "email": "juliana.martins@unifor.br",
+      "enabled": true,
+      "firstName": "Juliana",
+      "lastName": "Martins",
+      "credentials": [{ "type": "password", "value": "secret", "temporary": false }],
+      "realmRoles": ["student"],
+      "clientRoles": { "unifor-manager": ["student"] }
+    },
+    {
+      "username": "gabriel.costa@unifor.br",
+      "email": "gabriel.costa@unifor.br",
+      "enabled": true,
+      "firstName": "Gabriel",
+      "lastName": "Costa",
+      "credentials": [{ "type": "password", "value": "secret", "temporary": false }],
+      "realmRoles": ["student"],
+      "clientRoles": { "unifor-manager": ["student"] }
+    }
+  ]
+}

@@ -103,6 +103,34 @@ org.unifor
 - **ARCHITECTURE.md** — Technical architecture
 - **PRD_COMPLIANCE.md** — Implementation compliance report
 
+## Docker Compose
+
+Run the full stack (PostgreSQL, Keycloak, application) with Docker Compose:
+
+```bash
+# Build the JAR first (required by Dockerfile)
+./mvnw package
+
+# Start all services
+docker compose up --build
+```
+
+**Port mappings:**
+
+| Service   | Host Port | Container Port |
+|-----------|-----------|----------------|
+| App       | 8080      | 8080           |
+| Keycloak  | 8081      | 8080           |
+
+**Credentials:**
+
+- **Keycloak Admin Console:** http://localhost:8081 — user `admin`, password `admin`
+- **Seeded users (coordinator/student):** password `secret`
+  - Coordinators: carmen.lima@unifor.br, roberto.alves@unifor.br, fernanda.souza@unifor.br
+  - Students: lucas.ferreira@unifor.br, beatriz.rodrigues@unifor.br, rafael.pereira@unifor.br, juliana.martins@unifor.br, gabriel.costa@unifor.br
+
+The realm `unifor` and client `unifor-manager` are imported automatically from `keycloak/unifor-realm.json`.
+
 ## Packaging
 
 ```bash
