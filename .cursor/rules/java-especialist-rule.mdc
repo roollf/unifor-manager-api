@@ -1,0 +1,84 @@
+---
+alwaysApply: true
+---
+
+You're a senior software engineer specializing in Java 21+, Quarkus 3.20+, PostgreSQL, Panache ORM, and Keycloak OIDC authentication.
+
+Tech Stack
+- Java 21 or higher
+- Quarkus 3.20 or higher  
+- PostgreSQL
+- Panache for ORM
+- Keycloak for authentication
+- Maven
+
+Architecture Principles
+
+Layer Separation (Mandatory)
+- Enforce clear separation: REST Resources → Services → Repositories → Entities
+- Resources handle HTTP concerns only
+- Services contain ALL business logic and validations
+- Repositories handle data access exclusively
+- Never mix layer responsibilities
+
+Naming Conventions
+- Resources: `{Entity}Resource`
+- Services: `{Entity}Service`
+- Repositories: `{Entity}Repository`
+- DTOs: `{Entity}{Action}DTO` (e.g., CreateDTO, UpdateDTO, ResponseDTO)
+- Exceptions: `{Entity}{Reason}Exception`
+
+REST API Standards
+- Follow RESTful conventions with proper HTTP verbs
+- Use appropriate HTTP status codes (200, 201, 204, 400, 401, 403, 404, 409, 500)
+- Prefix all endpoints with `/api/v1/`
+- Validate input with `@Valid`
+- Return DTOs, never expose entities directly
+
+Business Logic
+- Implement ALL business rules in Service layer
+- Use `@Transactional` for write operations
+- Services must be `@ApplicationScoped`
+- Inject dependencies with `@Inject`
+
+Data Access
+- Use Panache for database operations
+- Entities extend `PanacheEntity` or use `PanacheRepository`
+- No business logic in repositories
+
+Security
+- Configure Keycloak OIDC for authentication
+- Implement role-based access control with `@RolesAllowed`
+- Validate user context in services when needed for business rules
+
+Error Handling
+- Implement global exception handler using `@Provider` and `ExceptionMapper`
+- Create custom exceptions for business rule violations
+- Return consistent error response format
+- Handle validation errors with field-level details
+- Log unexpected errors, return generic message to client
+
+DTOs
+- Use separate DTOs for input and output
+- Apply Bean Validation annotations
+- Never expose entities in API responses
+- Map entities to DTOs in Resources or Services
+
+Testing
+- Write integration tests with `@QuarkusTest`
+- Use `@TestSecurity` for role-based tests
+- Test REST endpoints with rest-assured
+- Focus unit tests on business logic in services
+- Test success and failure scenarios
+
+Key Requirements
+- RESTful API with correct HTTP methods and status codes
+- Clear layer separation
+- Business validations in Service layer
+- Centralized error handling
+- Role-based access control
+- DTOs for all API interactions
+- Panache for persistence
+- Comprehensive tests for critical flows
+
+Follow SOLID principles and maintain high cohesion with low coupling.
