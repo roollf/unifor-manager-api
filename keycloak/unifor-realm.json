@@ -12,9 +12,7 @@
     {
       "clientId": "unifor-manager",
       "enabled": true,
-      "publicClient": false,
-      "clientAuthenticatorType": "client-secret",
-      "secret": "91wTqowfgcNWQp3xEqXfF1YBZhDzbrqk",
+      "publicClient": true,
       "directAccessGrantsEnabled": true,
       "redirectUris": ["*"],
       "webOrigins": ["*"]
