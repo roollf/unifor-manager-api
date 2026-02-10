@@ -105,13 +105,16 @@ org.unifor
 
 ## Docker Compose
 
-Run the full stack (PostgreSQL, Keycloak, application) with Docker Compose:
+Run the full stack (PostgreSQL, Keycloak, application) with Docker Compose.
+
+The app image only **copies** from `target/quarkus-app/` (it does not run Maven), so you must build the Quarkus app **before** building the Docker image. Use this order every time:
 
 ```bash
-# Build the JAR first (required by Dockerfile)
-./mvnw package
+# 1. Build the Quarkus app (required; produces target/quarkus-app/)
+./mvnw package -DskipTests
+# On Windows (PowerShell): .\mvnw.cmd package -DskipTests
 
-# Start all services
+# 2. Build images and start all services
 docker compose up --build
 ```
 

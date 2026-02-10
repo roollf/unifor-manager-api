@@ -14,8 +14,8 @@ services:
       retries: 5
 
   keycloak:
-    image: quay.io/keycloak/keycloak:24
-    command: start --import-realm
+    image: quay.io/keycloak/keycloak:25.0.0
+    command: start-dev --import-realm
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
@@ -25,6 +25,12 @@ services:
       - ./keycloak:/opt/keycloak/data/import
     ports:
       - "8081:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080' || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+      start_period: 45s
     depends_on:
       postgres:
         condition: service_healthy
@@ -45,7 +51,7 @@ services:
       postgres:
         condition: service_healthy
       keycloak:
-        condition: service_started
+        condition: service_healthy
     restart: on-failure
 
 volumes:
