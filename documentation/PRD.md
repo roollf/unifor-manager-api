@@ -382,6 +382,28 @@ User (role=COORDINATOR) (1) ----< CurriculumMatrix (N)
 }
 ```
 
+#### Reference Data (Add Class Form Dropdowns)
+
+Used by the frontend to populate the "Add class" form dropdowns and filter options, even when the matrix has no classes yet. IDs and shapes match create-class and list-classes.
+
+| Method | Path | Role | Description |
+|--------|------|------|-------------|
+| GET | /api/coordinator/reference/subjects | coordinator | List all subjects |
+| GET | /api/coordinator/reference/professors | coordinator | List all professors |
+| GET | /api/coordinator/reference/time-slots | coordinator | List all time slots |
+| GET | /api/coordinator/reference/courses | coordinator | List all courses |
+
+**Request:** None (GET, no body)
+
+**Response 200:** Array of objects:
+
+- **Subjects:** `[{ "id": number, "name": "string" }]`
+- **Professors:** `[{ "id": number, "name": "string" }]`
+- **Time slots:** `[{ "id": number, "dayOfWeek": "string", "startTime": "HH:mm", "endTime": "HH:mm" }]` (same shape as in list-classes)
+- **Courses:** `[{ "id": number, "name": "string" }]`
+
+**Errors:** 401 (unauthorized), 403 (not coordinator)
+
 ### 4.3 Student Endpoints
 
 #### List Enrolled Classes

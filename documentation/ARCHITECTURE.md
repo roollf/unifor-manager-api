@@ -185,6 +185,10 @@ Query params: `page`, `size` (or `limit`/`offset`). Defaults (e.g., page=0, size
 @RolesAllowed("coordinator")
 public class MatrixResource { ... }
 
+@Path("/api/coordinator/reference")
+@RolesAllowed("coordinator")
+public class ReferenceDataResource { ... }  // GET /subjects, /professors, /time-slots, /courses (for Add class form dropdowns)
+
 @Path("/api/student/enrollments")
 @RolesAllowed("student")
 public class EnrollmentResource { ... }
