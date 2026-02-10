@@ -69,10 +69,10 @@ See `application.properties` and PRD Appendix B for details.
 
 | Role        | Endpoints                    |
 |-------------|------------------------------|
-| Coordinator | `/api/coordinator/matrices`, `/api/coordinator/matrices/{id}/classes` |
+| Coordinator | `/api/coordinator/matrices`, `/api/coordinator/matrices/{id}/classes`, `/api/coordinator/reference/{subjects,professors,time-slots,courses}` |
 | Student     | `/api/student/enrollments`, `/api/student/classes/available`         |
 
-Coordinator: create/update/delete matrices and classes.  
+Coordinator: create/update/delete matrices and classes; reference data for Add class form dropdowns.  
 Student: list enrollments, list available classes, enroll.
 
 ## Tests
@@ -133,6 +133,8 @@ docker compose up --build
   - Students: lucas.ferreira@unifor.br, beatriz.rodrigues@unifor.br, rafael.pereira@unifor.br, juliana.martins@unifor.br, gabriel.costa@unifor.br
 
 The realm `unifor` and client `unifor-manager` are imported automatically from `keycloak/unifor-realm.json`.
+
+Works on Linux, Mac, and Windows without extra setup. The frontend should use `http://localhost:8081` for Keycloak (auth server / issuer).
 
 ## Packaging
 
