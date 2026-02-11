@@ -1,28 +1,28 @@
-# unifor-manager
+# Unifor Manager - Backend
 
-Academic Course Registration System — a web application for coordinators to manage curriculum matrices and for students to view enrollments and enroll in classes.
+Backend da aplicação Unifor Manager, sistema de gestão de matrículas e turmas para coordenadores e alunos. Desenvolvido em Java com Quarkus, PostgreSQL e autenticação via Keycloak.
 
-## Tech Stack
+## Stack
 
 - **Java 21**
 - **Quarkus 3.x**
 - **PostgreSQL**
-- **Keycloak** (OIDC authentication)
+- **Keycloak** (autenticação OIDC)
 - **Hibernate ORM / Panache**
 - **Flyway** (migrations)
 
-## Prerequisites
+## Pré-requisitos
 
 - JDK 21+
 - Maven 3.9+
 - PostgreSQL
-- Keycloak (for production-like auth; optional for dev)
+- Keycloak (para autenticação em ambiente próximo ao de produção; opcional em desenvolvimento)
 
-## Quick Start
+## Início rápido
 
-### 1. Database
+### 1. Banco de dados
 
-Create database and user:
+Crie o banco e o usuário:
 
 ```sql
 CREATE DATABASE unifor_manager;
@@ -30,116 +30,120 @@ CREATE USER unifor WITH PASSWORD 'unifor';
 GRANT ALL PRIVILEGES ON DATABASE unifor_manager TO unifor;
 ```
 
-Flyway runs migrations on startup (tables + seed data).
+O Flyway executa as migrations na subida da aplicação (tabelas + dados iniciais).
 
-### 2. Run the application
+### 2. Executar a aplicação
 
-**With Keycloak** (recommended for full auth):
+**Com Keycloak** (recomendado para autenticação completa):
 
 ```bash
-# Ensure Keycloak is running at http://localhost:8081
+# Keycloak deve estar rodando em http://localhost:8081
 ./mvnw quarkus:dev
 ```
 
-**Without Keycloak** (local dev only):
+**Sem Keycloak** (apenas desenvolvimento local):
 
 ```bash
 ./mvnw quarkus:dev -Dquarkus.profile=dev-without-keycloak
 ```
 
-With `dev-without-keycloak`, OIDC is disabled and endpoints accept unauthenticated requests. Use only for local development.
+Com `dev-without-keycloak`, o OIDC fica desativado e os endpoints aceitam requisições sem autenticação. Use apenas em desenvolvimento local.
 
-### 3. API Documentation
+### 3. Documentação da API
 
 - **OpenAPI:** http://localhost:8080/q/openapi
 - **Swagger UI:** http://localhost:8080/q/swagger-ui
 
-## Keycloak Setup
+## Configuração do Keycloak
 
-For full authentication, configure Keycloak:
+Para autenticação completa, configure o Keycloak:
 
 1. Realm: `unifor`
-2. Client: `unifor-manager` (confidential)
+2. Client: `unifor-manager` (confidencial)
 3. Roles: `coordinator`, `student`
-4. User emails must match seeded `users.email` (see `V2__seed_data.sql`)
+4. Os e-mails dos usuários devem coincidir com os de `users.email` no seed (veja `V2__seed_data.sql`)
 
-See `application.properties` and PRD Appendix B for details.
+Consulte `application.properties` e o Anexo B do PRD para detalhes.
 
-## API Overview
+## Visão geral da API
 
-| Role        | Endpoints                    |
-|-------------|------------------------------|
-| Coordinator | `/api/coordinator/matrices`, `/api/coordinator/matrices/{id}/classes` |
-| Student     | `/api/student/enrollments`, `/api/student/classes/available`         |
+| Papel       | Endpoints                                                                 |
+|-------------|---------------------------------------------------------------------------|
+| Coordenador | `/api/coordinator/matrices`, `/api/coordinator/matrices/{id}/classes`, `/api/coordinator/reference/{subjects,professors,time-slots,courses}` |
+| Estudante   | `/api/student/enrollments`, `/api/student/classes/available`, `/api/student/me` |
 
-Coordinator: create/update/delete matrices and classes.  
-Student: list enrollments, list available classes, enroll.
+Coordenador: criar/editar/remover matrizes e turmas; dados de referência para os dropdowns do formulário de adicionar turma.  
+Estudante: listar matrículas, listar turmas disponíveis, matricular-se.
 
-## Tests
+## Testes
 
 ```bash
 ./mvnw test
 ```
 
-Tests use **Testcontainers** for PostgreSQL; no local DB required. See `Phase2Test`–`Phase6Test` for phase validation.
+Os testes usam **Testcontainers** para PostgreSQL; não é necessário banco local. Veja `Phase2Test`–`Phase6Test` para validação por fase.
 
-## Project Structure
+## Estrutura do projeto
 
 ```
 org.unifor
-├── api/coordinator      # Coordinator REST endpoints
-├── api/student          # Student REST endpoints
-├── service              # Business logic (coordinator, student)
-├── repository           # Panache repositories
-├── entity               # JPA entities
-├── dto                  # Request/Response DTOs
-├── exception            # Custom exceptions + mappers
-└── security             # CurrentUserService, Keycloak mapping
+├── api/coordinator      # Endpoints REST do coordenador
+├── api/student          # Endpoints REST do estudante
+├── service              # Regras de negócio (coordenador, estudante)
+├── repository           # Repositórios Panache
+├── entity               # Entidades JPA
+├── dto                  # DTOs de requisição e resposta
+├── exception            # Exceções customizadas e mappers
+└── security             # CurrentUserService, mapeamento Keycloak
 ```
 
-## Documentation
+## Documentação
 
-- **PRD.md** — Product requirements
-- **ARCHITECTURE.md** — Technical architecture
-- **PRD_COMPLIANCE.md** — Implementation compliance report
+- **PRD.md** — Requisitos do produto
+- **ARCHITECTURE.md** — Arquitetura técnica
+- **PRD_COMPLIANCE.md** — Relatório de conformidade da implementação
+
+A documentação detalhada fica em `documentation/` (PRD, ARCHITECTURE, PRD_COMPLIANCE).
 
 ## Docker Compose
 
-Run the full stack (PostgreSQL, Keycloak, application) with Docker Compose.
+Execute a stack completa (PostgreSQL, Keycloak, aplicação) com Docker Compose.
 
-The app image only **copies** from `target/quarkus-app/` (it does not run Maven), so you must build the Quarkus app **before** building the Docker image. Use this order every time:
+A imagem da aplicação apenas **copia** o conteúdo de `target/quarkus-app/` (não executa Maven), então é preciso **buildar** o app Quarkus **antes** de buildar a imagem Docker. Use sempre esta ordem:
 
 ```bash
-# 1. Build the Quarkus app (required; produces target/quarkus-app/)
+# 1. Buildar o app Quarkus (obrigatório; gera target/quarkus-app/)
 ./mvnw package -DskipTests
-# On Windows (PowerShell): .\mvnw.cmd package -DskipTests
+# No Windows (PowerShell): .\mvnw.cmd package -DskipTests
 
-# 2. Build images and start all services
+# 2. Buildar imagens e subir todos os serviços
 docker compose up --build
 ```
 
-**Port mappings:**
+**Portas:**
 
-| Service   | Host Port | Container Port |
-|-----------|-----------|----------------|
-| App       | 8080      | 8080           |
-| Keycloak  | 8081      | 8080           |
+| Serviço   | Porta no host | Porta no container |
+|-----------|----------------|---------------------|
+| App       | 8080           | 8080                |
+| Keycloak  | 8081           | 8080                |
 
-**Credentials:**
+**Credenciais:**
 
-- **Keycloak Admin Console:** http://localhost:8081 — user `admin`, password `admin`
-- **Seeded users (coordinator/student):** password `secret`
-  - Coordinators: carmen.lima@unifor.br, roberto.alves@unifor.br, fernanda.souza@unifor.br
-  - Students: lucas.ferreira@unifor.br, beatriz.rodrigues@unifor.br, rafael.pereira@unifor.br, juliana.martins@unifor.br, gabriel.costa@unifor.br
+- **Console Admin do Keycloak:** http://localhost:8081 — usuário `admin`, senha `admin`
+- **Usuários do seed (coordenador/estudante):** senha `secret`
+  - Coordenadores: carmen.lima@unifor.br, roberto.alves@unifor.br, fernanda.souza@unifor.br
+  - Estudantes: lucas.ferreira@unifor.br, beatriz.rodrigues@unifor.br, rafael.pereira@unifor.br, juliana.martins@unifor.br, gabriel.costa@unifor.br
 
-The realm `unifor` and client `unifor-manager` are imported automatically from `keycloak/unifor-realm.json`.
+O realm `unifor` e o client `unifor-manager` são importados automaticamente de `keycloak/unifor-realm.json`.
 
-## Packaging
+Funciona em Linux, Mac e Windows sem configuração extra. O frontend deve usar `http://localhost:8081` para o Keycloak (servidor de autenticação / issuer).
+
+## Empacotamento
 
 ```bash
 # JAR
 ./mvnw package
 
-# Native
+# Nativo
 ./mvnw package -Dnative -Dquarkus.native.container-build=true
 ```

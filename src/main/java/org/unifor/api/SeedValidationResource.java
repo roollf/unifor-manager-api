@@ -59,7 +59,7 @@ public class SeedValidationResource {
                 "expected", Map.of(
                         "subjects", 15,
                         "professors", 5,
-                        "timeSlots", 9,
+                        "timeSlots", 40,
                         "courses", 9,
                         "coordinators", 3,
                         "students", 5

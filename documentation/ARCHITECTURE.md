@@ -137,7 +137,7 @@ public class MatrixClass extends PanacheEntity { ... }
 **Shared nested DTOs (in `dto.response`):**
 - `SubjectDto` — id, name
 - `ProfessorDto` — id, name
-- `TimeSlotDto` — id, dayOfWeek, startTime, endTime
+- `TimeSlotDto` — id, dayOfWeek, startTime, endTime, code (display code per PRD Appendix C, e.g. M24AB)
 - `CourseDto` — id, name (when listing authorized courses)
 
 **Composed responses:**
@@ -184,6 +184,10 @@ Query params: `page`, `size` (or `limit`/`offset`). Defaults (e.g., page=0, size
 @Path("/api/coordinator/matrices")
 @RolesAllowed("coordinator")
 public class MatrixResource { ... }
+
+@Path("/api/coordinator/reference")
+@RolesAllowed("coordinator")
+public class ReferenceDataResource { ... }  // GET /subjects, /professors, /time-slots, /courses (for Add class form dropdowns)
 
 @Path("/api/student/enrollments")
 @RolesAllowed("student")

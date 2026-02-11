@@ -46,7 +46,7 @@ The Academic Course Registration System is a web application that enables **coor
 |--------|-------------|--------------|
 | Subject | Academic subject/discipline | 15 |
 | Professor | Instructor | 5 |
-| TimeSlot | Day of week + start/end time | 9 |
+| TimeSlot | Day of week + start/end time (+ optional code per Appendix C) | 40 |
 | Course | Academic course/program | 9 |
 | User | System user with role (Coordinator or Student) | 5 students + 3 coordinators |
 
@@ -209,6 +209,33 @@ User (role=COORDINATOR) (1) ----< CurriculumMatrix (N)
 | EN-06 | Class must not be soft-deleted |
 | EN-07 | Student cannot enroll twice in the same class |
 | EN-08 | Student cannot enroll in the same subject more than once (even in different time slots) |
+
+### 3.7a Student course assignment and course authorization (EN-01)
+
+This section defines how the student's course is determined, how it is set and updated, and how it is used for course authorization. It also defines behavior when the student has no course assigned.
+
+**Single source of truth for the student's course**
+
+- The student's course is determined by the **User** entity (single table with role; see §2.2, §5.2). There is no separate Student entity.
+- The user row linked to the authenticated identity **via email (AC-05)** has a **course_id** (FK to **courses**). For students, this is the student's course; for coordinators it is null.
+- The API resolves the current user by email from Keycloak, then reads **User.course_id** (or the associated Course entity) for all course-authorization logic. This is the single source of truth.
+
+**How the student's course is set and updated**
+
+- **At creation / seed:** The seed script (e.g. Flyway V2) creates users with role STUDENT and sets **course_id** to a valid course. Keycloak must be configured with matching emails so that authenticated students have a corresponding User row with course_id.
+- **When adding new students (outside seed):** The PRD does not mandate a single flow. Acceptable options include: (1) Admin sets **course_id** when creating or editing the user (admin-only endpoint or back-office); (2) Sync from IdP (e.g. Keycloak custom attribute) into **users.course_id**; (3) A dedicated endpoint to set/update the student's course (e.g. **PATCH /api/student/profile** with **courseId**, or admin **PATCH /api/admin/users/{id}**). If the system creates student users without **course_id**, an explicit way to set or update the student's course (one of the above) must be implemented and documented so that EN-01 can be satisfied in production.
+
+**Use for GET /api/student/classes/available and POST /api/student/enrollments**
+
+- **GET /api/student/classes/available:** The API uses the current student's **User.course_id** to filter and mark classes. Only classes in the active matrix that are authorized for that course (via matrix_class_authorized_courses), have available seats, and satisfy other rules (no schedule conflict, no duplicate subject, etc.) are returned. Each item includes **authorizedForStudentCourse** (true when the class is authorized for the student's course).
+- **POST /api/student/enrollments:** EN-01 is enforced using **User.course_id**: if the class is not authorized for the student's course, the server returns **409 Conflict** with code **CONFLICT_UNAUTHORIZED_COURSE** (see §4.4).
+
+**Handling "no course" (student has no course assigned)**
+
+- If the authenticated student has **course_id** null:
+  - **GET /api/student/classes/available:** Returns an empty list. No class is authorized for the student's course, so no items are returned (or all would have authorizedForStudentCourse: false if the API returned unfiltered list; current behavior is to return only authorized classes, so the list is empty).
+  - **POST /api/student/enrollments:** Returns **409 Conflict** with code **CONFLICT_UNAUTHORIZED_COURSE**. The same code is used whether the student has no course or the class is not in the authorized list for the student's course. The message (e.g. "Turma não autorizada para o curso do estudante") should allow the frontend to show an appropriate message; if desired, the backend may use a distinct subcode or message for "student has no course" (e.g. **CONFLICT_STUDENT_NO_COURSE**) so the frontend can prompt the user to set their course.
+- The backend does not block access to student endpoints when the student has no course; it returns the above responses so the frontend can show a suitable message (e.g. "Configure seu curso" or "Contacte o administrador para definir seu curso").
 
 ### 3.8 View Curriculum Matrix (Coordinator)
 
@@ -382,6 +409,28 @@ User (role=COORDINATOR) (1) ----< CurriculumMatrix (N)
 }
 ```
 
+#### Reference Data (Add Class Form Dropdowns)
+
+Used by the frontend to populate the "Add class" form dropdowns and filter options, even when the matrix has no classes yet. IDs and shapes match create-class and list-classes.
+
+| Method | Path | Role | Description |
+|--------|------|------|-------------|
+| GET | /api/coordinator/reference/subjects | coordinator | List all subjects |
+| GET | /api/coordinator/reference/professors | coordinator | List all professors |
+| GET | /api/coordinator/reference/time-slots | coordinator | List all time slots |
+| GET | /api/coordinator/reference/courses | coordinator | List all courses |
+
+**Request:** None (GET, no body)
+
+**Response 200:** Array of objects:
+
+- **Subjects:** `[{ "id": number, "name": "string" }]`
+- **Professors:** `[{ "id": number, "name": "string" }]`
+- **Time slots:** `[{ "id": number, "dayOfWeek": "string", "startTime": "HH:mm", "endTime": "HH:mm", "code": "string" | null }]` (same shape as in list-classes; code e.g. M24AB per Appendix C)
+- **Courses:** `[{ "id": number, "name": "string" }]`
+
+**Errors:** 401 (unauthorized), 403 (not coordinator)
+
 ### 4.3 Student Endpoints
 
 #### List Enrolled Classes
@@ -411,7 +460,7 @@ User (role=COORDINATOR) (1) ----< CurriculumMatrix (N)
 
 | Method | Path | Role | Description |
 |--------|------|------|-------------|
-| GET | /api/student/classes/available | student | List classes student can enroll in |
+| GET | /api/student/classes/available | student | List classes student can enroll in (filtered by student's course, availability, etc.; see §3.7a) |
 
 **Query Params:**
 - `matrixId` (optional): filter by matrix
@@ -433,6 +482,8 @@ User (role=COORDINATOR) (1) ----< CurriculumMatrix (N)
   ]
 }
 ```
+
+**Note:** When the student has no course assigned (course_id null), the list is empty. See §3.7a.
 
 **Errors:** 403 (not student)
 
@@ -461,7 +512,7 @@ User (role=COORDINATOR) (1) ----< CurriculumMatrix (N)
 }
 ```
 
-**Errors:** 400 (validation), 403 (not student), 404 (class not found), 409 (no seats, schedule conflict, not authorized for course, already enrolled, duplicate subject)
+**Errors:** 400 (validation), 403 (not student), 404 (class not found), 409 (no seats, schedule conflict, not authorized for course — code CONFLICT_UNAUTHORIZED_COURSE, including when student has no course; already enrolled; duplicate subject). See §3.7a for "no course" behavior.
 
 ### 4.4 Common Error Response Structure
 
@@ -533,15 +584,16 @@ Using one `users` table with a `role` enum (COORDINATOR, STUDENT) instead of sep
 | Column | Type | Constraints |
 |--------|------|-------------|
 | id | BIGSERIAL | PK |
-| day_of_week | VARCHAR(10) or INTEGER | NOT NULL (e.g., MONDAY or 1–7) |
+| day_of_week | VARCHAR(15) | NOT NULL (e.g., SEG, TER, QUA, QUI, SEX) |
 | start_time | TIME | NOT NULL |
 | end_time | TIME | NOT NULL |
+| code | VARCHAR(20) | NULL — display code (e.g. M24AB), see Appendix C |
 | created_at | TIMESTAMPTZ | NOT NULL, DEFAULT now() |
 | updated_at | TIMESTAMPTZ | NOT NULL, DEFAULT now() |
 
-**Seed:** Minimum 9 time slots
+**Seed:** 40 time slots following the Unifor turn/days/block rules (Appendix C).
 
-**Note:** Ensure `start_time` and `end_time` are comparable for schedule conflict detection.
+**Note:** Ensure `start_time` and `end_time` are comparable for schedule conflict detection. Each row is one (day, start, end); the optional `code` identifies the logical slot (e.g. M24AB = Manhã, seg/qua/sex, block A/B) for display.
 
 #### courses
 | Column | Type | Constraints |
@@ -646,7 +698,7 @@ Using one `users` table with a `role` enum (COORDINATOR, STUDENT) instead of sep
 - Create junction entity/table for MatrixClass ↔ Course (matrix_class_authorized_courses)
 - Implement repositories (Panache or JpaRepository)
 - Add Flyway/Liquibase migrations for all tables
-- Seed script: users (5 students, 3 coordinators), subjects (15), professors (5), time_slots (9), courses (9)
+- Seed script: users (5 students, 3 coordinators), subjects (15), professors (5), time_slots (40, see Appendix C), courses (9)
 - Ensure Keycloak user emails match users.email for seeded users
 
 **Dependencies:** None (foundation)
@@ -845,7 +897,7 @@ Using one `users` table with a `role` enum (COORDINATOR, STUDENT) instead of sep
 | Assumption | Value |
 |------------|-------|
 | **User ↔ Keycloak mapping** | Via email (users.email) |
-| **TimeSlot structure** | `day_of_week`, `start_time`, `end_time`; period of day derived from time ranges |
+| **TimeSlot structure** | `day_of_week`, `start_time`, `end_time`, optional `code` (Appendix C); period of day derived from time ranges (M/T/N ↔ MORNING/AFTERNOON/EVENING) |
 | **Active matrix** | At most one matrix with `active = true`; students enroll only in classes from active matrix |
 | **Database** | All tables must be implemented; seed data required for users, subjects, professors, time_slots, courses |
 
@@ -865,13 +917,13 @@ Using one `users` table with a `role` enum (COORDINATOR, STUDENT) instead of sep
 
 ## Appendix A: Time Slot Period of Day Ranges (Proposed)
 
-| Period | Start | End |
-|--------|-------|-----|
-| Morning | 06:00 | 12:00 |
-| Afternoon | 12:00 | 18:00 |
-| Evening | 18:00 | 24:00 |
+| Period | Start | End | Turn (Appendix C) |
+|--------|-------|-----|-------------------|
+| Morning | 06:00 | 12:00 | M (Manhã) |
+| Afternoon | 12:00 | 18:00 | T (Tarde) |
+| Evening | 18:00 | 24:00 | N (Noite) |
 
-A TimeSlot matches a period if its `start_time` falls within the range (or use overlap logic).
+A TimeSlot matches a period if its `start_time` falls within the range (or use overlap logic). The `periodOfDay` filter (MORNING | AFTERNOON | EVENING) aligns with turn codes M, T, N in Appendix C.
 
 ---
 
@@ -883,6 +935,45 @@ A TimeSlot matches a period if its `start_time` falls within the range (or use o
 | student | Can view enrollments and enroll in classes |
 
 Realm roles or client roles as per Keycloak setup.
+
+---
+
+## Appendix C: Time slot rules (Unifor — turn, days, block, code)
+
+Time slots follow a fixed structure: **turn** (M/T/N) + **days** (246 or 35) + **block** (AB, CD, or EF). Each block spans two 50-minute periods.
+
+**Turn codes (TURNO):**
+| Code | Name |
+|------|------|
+| M | Manhã |
+| T | Tarde |
+| N | Noite |
+
+**Days codes:**
+| Code | Days |
+|------|------|
+| 246 | Segunda, quarta e sexta (SEG, QUA, SEX) |
+| 35 | Terça e quinta (TER, QUI) |
+
+**Block times (start–end for the combined block):**
+
+| Turn | Block | Time range |
+|------|-------|------------|
+| Manhã | A/B | 7h30–9h10 (7h30–8h20 + 8h20–9h10) |
+| Manhã | C/D | 9h30–11h10 (9h30–10h20 + 10h20–11h10) |
+| Manhã | E/F | 11h20–13h (11h20–12h10 + 12h10–13h) |
+| Tarde | A/B | 13h30–15h10 |
+| Tarde | C/D | 15h30–17h10 |
+| Tarde | E/F | 17h20–19h |
+| Noite | A/B | 19h–20h40 |
+| Noite | C/D | 21h–22h40 |
+| Noite | E/F | — (no slot) |
+
+**Code format:** `{turn}{days}{block}` — e.g. **M24AB** = Manhã, seg/qua/sex, 7h30–9h10.
+
+The database stores one row per (day_of_week, start_time, end_time); the same logical code (e.g. M24AB) appears on multiple rows (one per day: SEG, QUA, SEX). Schedule conflict uses same day + overlapping time intervals. The `periodOfDay` filter (Appendix A) maps: M → MORNING, T → AFTERNOON, N → EVENING.
+
+**Seed:** 40 rows (M24AB×3, M35AB×2, M24CD×3, M35CD×2, M24EF×3, M35EF×2, T24AB×3, T35AB×2, T24CD×3, T35CD×2, T24EF×3, T35EF×2, N24AB×3, N35AB×2, N24CD×3, N35CD×2).
 
 ---
 
