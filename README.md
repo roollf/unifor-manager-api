@@ -147,3 +147,7 @@ Funciona em Linux, Mac e Windows sem configuração extra. O frontend deve usar 
 # Nativo
 ./mvnw package -Dnative -Dquarkus.native.container-build=true
 ```
+
+## Licença
+
+Uso interno / acadêmico conforme definido pelo projeto Unifor Manager.
