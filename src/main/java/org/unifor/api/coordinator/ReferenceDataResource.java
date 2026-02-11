@@ -13,8 +13,6 @@ import org.unifor.repository.ProfessorRepository;
 import org.unifor.repository.SubjectRepository;
 import org.unifor.repository.TimeSlotRepository;
 
-import java.util.List;
-
 /**
  * Reference data endpoints for coordinator "Add class" form dropdowns.
  * Returns the same IDs and shapes used in create-class and list-classes.
@@ -62,7 +60,7 @@ public class ReferenceDataResource {
     @Path("/time-slots")
     public Response listTimeSlots() {
         var items = timeSlotRepository.listAll().stream()
-                .map(t -> new TimeSlotDto(t.id, t.dayOfWeek, t.startTime, t.endTime))
+                .map(t -> new TimeSlotDto(t.id, t.dayOfWeek, t.startTime, t.endTime, t.code))
                 .toList();
         return Response.ok().entity(items).build();
     }
