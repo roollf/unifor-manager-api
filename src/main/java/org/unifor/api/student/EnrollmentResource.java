@@ -53,7 +53,7 @@ public class EnrollmentResource {
         var subject = new SubjectDto(mc.subject.id, mc.subject.name);
         var professor = new ProfessorDto(mc.professor.id, mc.professor.name);
         var timeSlot = new TimeSlotDto(mc.timeSlot.id, mc.timeSlot.dayOfWeek,
-                mc.timeSlot.startTime, mc.timeSlot.endTime);
+                mc.timeSlot.startTime, mc.timeSlot.endTime, mc.timeSlot.code);
         return new EnrollmentResponse(e.id, mc.id, subject, professor, timeSlot, e.enrolledAt);
     }
 
