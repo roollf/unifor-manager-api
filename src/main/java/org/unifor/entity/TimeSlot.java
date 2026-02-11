@@ -21,6 +21,10 @@ public class TimeSlot extends PanacheEntity {
     @Column(name = "end_time", nullable = false)
     public LocalTime endTime;
 
+    /** Display code per PRD Appendix C (e.g. M24AB = Manhã, seg/qua/sex, 7h30–9h10). */
+    @Column(name = "code", length = 20)
+    public String code;
+
     @Column(name = "created_at", nullable = false)
     public Instant createdAt = Instant.now();
 
@@ -34,5 +38,12 @@ public class TimeSlot extends PanacheEntity {
         this.dayOfWeek = dayOfWeek;
         this.startTime = startTime;
         this.endTime = endTime;
+    }
+
+    public TimeSlot(String dayOfWeek, LocalTime startTime, LocalTime endTime, String code) {
+        this.dayOfWeek = dayOfWeek;
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.code = code;
     }
 }
